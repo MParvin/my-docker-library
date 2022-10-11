@@ -1,0 +1,28 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv:
+  - ".env"
+
+vars:
+  SSH: echo "{{.SERVER_USER}}@{{.SERVER_ADDR}}"
+
+tasks:
+  default:
+    deps:
+      - pre-build
+ 
+  pre-build:
+    cmds:
+      - echo "pre-build"
+      - echo "ok"
+      - "{{.SSH}} 'mkdir -p {{.WORKDIR}}'"
+      - rsync -avz --delete --exclude=".git" --exclude="Taskfile.yaml" ./ ""{{.SERVER_USER}}@{{.SERVER_ADDR}}:{{.WORKDIR}}""
+
+  aws-cli:
+    deps:
+      - pre-build
+    cmds:
+      - "{{.SSH}} 'cd {{.WORKDIR}}/{{.TASK}} && docker build --no-cache -t {{.DOCKER_USER}}/{{.TASK}}:latest .'"
+      - "{{.SSH}} 'docker push {{.DOCKER_USER}}/{{.TASK}}:latest'"
